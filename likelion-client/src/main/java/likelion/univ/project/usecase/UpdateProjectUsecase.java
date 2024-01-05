@@ -6,7 +6,6 @@ import likelion.univ.domain.project.adapter.ProjectTechAdaptor;
 import likelion.univ.domain.project.entity.Image;
 import likelion.univ.domain.project.entity.Project;
 import likelion.univ.domain.project.entity.Tech;
-import likelion.univ.domain.project.exception.ProjectNotAuthorization;
 import likelion.univ.domain.project.service.ProjectImageService;
 import likelion.univ.domain.project.service.ProjectMemberService;
 import likelion.univ.domain.project.service.ProjectService;
@@ -16,7 +15,7 @@ import likelion.univ.domain.user.adaptor.UserAdaptor;
 import likelion.univ.domain.user.entity.User;
 import likelion.univ.project.dto.request.ProjectRequestDto;
 import likelion.univ.project.dto.response.ProjectIdResponseDto;
-import likelion.univ.utils.AuthentiatedUserUtils;
+import likelion.univ.utils.AuthenticatedUserUtils;
 import lombok.RequiredArgsConstructor;
 
 import java.util.List;
@@ -26,7 +25,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class UpdateProjectUsecase {
 
-    private final AuthentiatedUserUtils authentiatedUserUtils;
+    private final AuthenticatedUserUtils authenticatedUserUtils;
     private final ProjectService projectService;
     private final ProjectTechService projectTechService;
     private final ProjectImageService projectImageService;
@@ -36,18 +35,16 @@ public class UpdateProjectUsecase {
     private final UserAdaptor userAdaptor;
     private final UniversityAdaptor universityAdaptor;
 
-    public ProjectIdResponseDto excute(Long projectId, ProjectRequestDto projectRequestDto) {
+    public ProjectIdResponseDto execute(Long projectId, ProjectRequestDto projectRequestDto) {
 
         Project project = projectAdaptor.findById(projectId);
-        User user = authentiatedUserUtils.getCurrentUser();
 
-        if(user.getId() != project.getAuthor().getId())
-            throw new ProjectNotAuthorization();
+        authenticatedUserUtils.checkidentification(project.getAuthor().getId());
 
         List<String> techNames = projectRequestDto.getProjectTeches();
-        List<Tech> techList = techNames.stream()
-                .flatMap(techName -> projectTechAdaptor.findByName(techName).stream())
-                .collect(Collectors.toList());
+//        List<Tech> techList = techNames.stream()
+//                .flatMap(techName -> projectTechAdaptor.findByName(techName.toUpperCase()).stream())
+//                .collect(Collectors.toList());
 
         List<Image> image = projectRequestDto.getImageUrl().stream()
                 .map(imageUrl -> new Image(project, imageUrl))
@@ -63,7 +60,7 @@ public class UpdateProjectUsecase {
             editProject.updateUniv(null);
 
         projectService.updateProject(projectId, editProject);
-        projectTechService.updateProjectTech(project,techList);
+        projectTechService.updateProjectTech(project,techNames);
         projectImageService.updateImage(project, image);
         projectMemberService.updateProjectMember(project, members);
 

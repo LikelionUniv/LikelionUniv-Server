@@ -1,28 +1,39 @@
 package likelion.univ.comment.usecase;
 
 import likelion.univ.annotation.UseCase;
-import likelion.univ.comment.dto.CommentCreateParentRequestDto;
-import likelion.univ.domain.comment.dto.CommentCommandResponseDto;
-import likelion.univ.domain.comment.dto.CommentCreateParentServiceDto;
+import likelion.univ.comment.dto.request.CommentCreateParentRequestDto;
+import likelion.univ.domain.comment.dto.response.SimpleCommentData;
+import likelion.univ.domain.comment.dto.request.CreateParentCommentCommand;
 import likelion.univ.domain.comment.service.CommentDomainService;
-import likelion.univ.response.SuccessResponse;
-import likelion.univ.utils.AuthentiatedUserUtils;
+import likelion.univ.post.entity.PostCountInfo;
+import likelion.univ.post.processor.GetOrCreatePostCountInfoProcessor;
+import likelion.univ.post.processor.UpdatePostCountInfoProcessor;
+import likelion.univ.utils.AuthenticatedUserUtils;
 import lombok.RequiredArgsConstructor;
 
 @UseCase
 @RequiredArgsConstructor
 public class CreateParentCommentUseCase {
-    private final AuthentiatedUserUtils userUtils;
+    private final AuthenticatedUserUtils userUtils;
     private final CommentDomainService commentDomainService;
+    private final GetOrCreatePostCountInfoProcessor getOrCreatePostCountInfoProcessor;
+    private final UpdatePostCountInfoProcessor updatePostCountInfoProcessor;
 
-    public SuccessResponse<?> execute(CommentCreateParentRequestDto createRequestDto) {
-        CommentCommandResponseDto response = commentDomainService.createParentComment(serviceDtoBy(createRequestDto));
-        return SuccessResponse.of(response);
+    public SimpleCommentData execute(Long postId, CommentCreateParentRequestDto createRequestDto) {
+        SimpleCommentData parentComment = commentDomainService.createParentComment(serviceDtoBy(postId, createRequestDto));
+
+        // redis update
+        PostCountInfo countInfo = getOrCreatePostCountInfoProcessor.execute(postId);
+        Long commentCount = countInfo.getCommentCount();
+        Long likeCount = countInfo.getLikeCount();
+        updatePostCountInfoProcessor.execute(postId, ++commentCount, likeCount);
+
+        return parentComment;
     }
 
-    private CommentCreateParentServiceDto serviceDtoBy(CommentCreateParentRequestDto createParentRequest) {
-        return CommentCreateParentServiceDto.builder()
-                .postId(createParentRequest.getPostId())
+    private CreateParentCommentCommand serviceDtoBy(Long postId, CommentCreateParentRequestDto createParentRequest) {
+        return CreateParentCommentCommand.builder()
+                .postId(postId)
                 .loginUserId(userUtils.getCurrentUserId())
                 .body(createParentRequest.getBody())
                 .build();

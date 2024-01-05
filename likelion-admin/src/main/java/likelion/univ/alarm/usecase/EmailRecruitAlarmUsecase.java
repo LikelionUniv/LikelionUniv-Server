@@ -1,11 +1,11 @@
 package likelion.univ.alarm.usecase;
 
-import likelion.univ.alarm.dto.AlarmContentsDto;
+import likelion.univ.alarm.dto.RecruitEmailAlarmDto;
 import likelion.univ.annotation.UseCase;
 import likelion.univ.domain.recruit.entity.Recruit;
 import likelion.univ.domain.recruit.service.RecruitQueryService;
-import likelion.univ.email.EmailContent;
-import likelion.univ.email.EmailSender;
+import likelion.univ.email.sender.EmailContent;
+import likelion.univ.email.sender.EmailSender;
 import lombok.RequiredArgsConstructor;
 
 import java.util.List;
@@ -13,22 +13,15 @@ import java.util.stream.Collectors;
 
 @UseCase
 @RequiredArgsConstructor
-public class EmailRecruitAlarmUsecase implements AlarmUsecase {
+public class EmailRecruitAlarmUsecase {
 
-    private final RecruitQueryService recruitQueryService;
     private final EmailSender emailSender;
 
-    public void execute(AlarmContentsDto alarmContentsDto) {
-        List<Recruit> recruits = recruitQueryService.queryAllByUniversityName(alarmContentsDto.getUniversityName());
-        List<String> emails = recruits.stream()
-                .map(Recruit::getEmail)
-                .collect(Collectors.toList());
-
+    public void execute(RecruitEmailAlarmDto recruitEmailAlarmDto) {
         EmailContent emailContent = EmailContent.builder()
-                .subject(alarmContentsDto.getSubject())
-                .sender(alarmContentsDto.getSender())
-                .contents(alarmContentsDto.getContent())
-                .receivers(emails)
+                .subject(recruitEmailAlarmDto.getSubject())
+                .contents(recruitEmailAlarmDto.getContents())
+                .receivers(recruitEmailAlarmDto.getReceivers())
                 .build();
 
         emailSender.send(emailContent);

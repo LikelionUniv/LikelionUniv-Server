@@ -10,12 +10,10 @@ import likelion.univ.domain.project.service.ProjectService;
 import likelion.univ.domain.project.service.ProjectTechService;
 import likelion.univ.domain.university.adaptor.UniversityAdaptor;
 import likelion.univ.domain.user.adaptor.UserAdaptor;
-import likelion.univ.domain.user.entity.Role;
 import likelion.univ.domain.user.entity.User;
-import likelion.univ.domain.user.exception.NotAdminForbiddenException;
 import likelion.univ.project.dto.request.ProjectRequestDto;
 import likelion.univ.project.dto.response.ProjectIdResponseDto;
-import likelion.univ.utils.AuthentiatedUserUtils;
+import likelion.univ.utils.AuthenticatedUserUtils;
 import lombok.RequiredArgsConstructor;
 
 import java.util.List;
@@ -25,7 +23,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class CreateProjectUsecase {
 
-    private final AuthentiatedUserUtils authentiatedUserUtils;
+    private final AuthenticatedUserUtils authenticatedUserUtils;
     private final ProjectService projectService;
     private final ProjectTechService projectTechService;
     private final ProjectImageService projectImageService;
@@ -34,9 +32,9 @@ public class CreateProjectUsecase {
     private final ProjectAdaptor projectAdaptor;
     private final UniversityAdaptor universityAdaptor;
 
-    public ProjectIdResponseDto excute(ProjectRequestDto projectRequestDto) {
+    public ProjectIdResponseDto execute(ProjectRequestDto projectRequestDto) {
 
-        User user = authentiatedUserUtils.getCurrentUser();
+        User user = authenticatedUserUtils.getCurrentUser();
 //        if(user.getAuthInfo().getRole() != Role.UNIVERSITY_ADMIN) {
 //            throw new NotAdminForbiddenException();
 //        }
@@ -50,7 +48,7 @@ public class CreateProjectUsecase {
         Long id = createdProject.getId();
         Project project = projectAdaptor.findById(id);
         List<String> techNames = projectRequestDto.getProjectTeches();
-        projectTechService.addProjectTech(project, techNames);
+        projectTechService.addProjectTech(project, techNames.stream().map(tech -> tech.toUpperCase()).toList());
         projectImageService.addImage(
                 projectRequestDto.getImageUrl().stream()
                         .map(imageUrl -> new Image(project, imageUrl))
