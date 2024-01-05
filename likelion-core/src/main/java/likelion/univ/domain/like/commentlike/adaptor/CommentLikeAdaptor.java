@@ -30,4 +30,12 @@ public class CommentLikeAdaptor {
         return commentLikeRepository.findByUser(user);
     }
 
+    public CommentLike findByCommentIdAndUserId(Long commentId, Long userId) {
+        return commentLikeRepository.findByCommentIdAndUserId(commentId, userId).orElseThrow(() -> new CommentLikeNotFoundException());
+    }
+
+    public Boolean existsByCommentIdAndUserId(Long commentId, Long userId) {
+        return commentLikeRepository.existsByCommentIdAndUserId(commentId, userId);
+    }
+
 }

@@ -14,12 +14,16 @@ import javax.persistence.ManyToOne;
 @AllArgsConstructor
 @Builder
 public class UniversityInfo {
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "university_id")
     private University university;
     private String major;
     private Long ordinal;
+
+    public void updateUniversityInfo(String major, Long ordinal){
+        this.major=major;
+        this.ordinal=ordinal;
+    }
 
     public static UniversityInfo universityInfoForSignUp(University university, String major){
         return UniversityInfo.builder()

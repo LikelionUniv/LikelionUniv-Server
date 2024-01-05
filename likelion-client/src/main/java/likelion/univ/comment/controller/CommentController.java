@@ -2,12 +2,13 @@ package likelion.univ.comment.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import likelion.univ.comment.dto.CommentCreateChildRequestDto;
-import likelion.univ.comment.dto.CommentCreateParentRequestDto;
-import likelion.univ.comment.dto.CommentUpdateRequestDto;
-import likelion.univ.comment.repository.CommentReadRepository;
+import likelion.univ.comment.dto.request.CommentCreateChildRequestDto;
+import likelion.univ.comment.dto.request.CommentCreateParentRequestDto;
+import likelion.univ.comment.dto.request.CommentUpdateRequestDto;
+import likelion.univ.comment.dto.response.CommentResponseDto;
 import likelion.univ.comment.usecase.*;
-import likelion.univ.domain.comment.dto.CommentDetailResponseDto;
+import likelion.univ.domain.comment.dto.response.CommentIdData;
+import likelion.univ.domain.comment.dto.response.SimpleCommentData;
 import likelion.univ.response.SuccessResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,53 +20,64 @@ import java.util.List;
 @Slf4j
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/v1/community/comments")
-@Tag(name = "댓글", description = "댓글 API")
+@RequestMapping("/v1/community")
+@Tag(name = "댓글", description = "커뮤니티 APIs")
 public class CommentController {
     private final CreateParentCommentUseCase createParentCommentUseCase;
     private final CreateChildCommentUseCase createChildCommentUseCase;
     private final UpdateCommentUseCase updateCommentUseCase;
     private final SoftDeleteCommentUseCase softDeleteCommentUseCase;
     private final HardDeleteCommentUseCase hardDeleteCommentUseCase;
-    private final CommentReadRepository commentReadRepository;
+    private final GetCommentUseCase getCommentUseCase;
 
     /* read */
-    @Operation(summary = "댓글 조회", description = "게시글에 대한 댓글을 최신순으로 조회합니다.")
-    @GetMapping("/of/{postId}")
-    public SuccessResponse<?> getComments(@PathVariable Long postId) {
-        List<CommentDetailResponseDto> response = commentReadRepository.findAll(postId);
+    @Operation(summary = "게시글에 대한 댓글 전체 조회",
+            description = """
+                    ### params
+                    - 게시글 id
+                    """)
+    @GetMapping("/comments")
+    public SuccessResponse<List<CommentResponseDto>> getCommentsByPost(@RequestParam Long postId) {
+        List<CommentResponseDto> response = getCommentUseCase.execute(postId);
         return SuccessResponse.of(response);
     }
 
-
     /* command */
     @Operation(summary = "댓글 작성", description = "부모 댓글을 생성합니다.")
-    @PostMapping("/parent")
-    public SuccessResponse<?> createParentComment(@RequestBody CommentCreateParentRequestDto request) {
-        return createParentCommentUseCase.execute(request);
+    @PostMapping("/comments/parent")
+    public SuccessResponse<SimpleCommentData> createParentComment(@RequestParam Long postId, @RequestBody CommentCreateParentRequestDto request) {
+        SimpleCommentData response = createParentCommentUseCase.execute(postId, request);
+        return SuccessResponse.of(response);
     }
 
     @Operation(summary = "대댓글 작성", description = "자식 댓글을 생성합니다.")
-    @PostMapping("/child")
-    public SuccessResponse<?> createChildComment(@RequestBody CommentCreateChildRequestDto request) {
-        return createChildCommentUseCase.execute(request);
+    @PostMapping("/comments/{parentCommentId}/child")
+    public SuccessResponse<SimpleCommentData> createChildComment(@PathVariable Long parentCommentId, @RequestBody CommentCreateChildRequestDto request) {
+        SimpleCommentData response = createChildCommentUseCase.execute(parentCommentId, request);
+        return SuccessResponse.of(response);
     }
 
     @Operation(summary = "댓글 내용 수정", description = "댓글의 내용(body only)을 수정합니다.")
     @PatchMapping("/{commentId}")
-    public SuccessResponse<?> updateComment(@PathVariable Long commentId, @RequestBody CommentUpdateRequestDto request) {
-        return updateCommentUseCase.execute(commentId, request);
+    public SuccessResponse<CommentIdData> updateComment(@PathVariable Long commentId, @RequestBody CommentUpdateRequestDto request) {
+        CommentIdData response = updateCommentUseCase.execute(commentId, request);
+        return SuccessResponse.of(response);
     }
 
-    @Operation(summary = "댓글 삭제", description = "댓글을 soft delete 합니다.")
+    @Operation(summary = "댓글 soft 삭제", description = "댓글을 soft delete 합니다.")
     @PatchMapping("/disable/{commentId}")
-    public SuccessResponse<?> deleteCommentSoft(@PathVariable Long commentId) {
-        return softDeleteCommentUseCase.execute(commentId);// soft delete
+    public SuccessResponse<SimpleCommentData> deleteCommentSoft(@PathVariable Long commentId) {
+        SimpleCommentData response = softDeleteCommentUseCase.execute(commentId);// soft delete
+        return SuccessResponse.of(response);
     }
 
-    @Operation(summary = "댓글 완전 삭제", description = "댓글을 hard delete 합니다.")
+    @Operation(summary = "(시스템용) 댓글 완전 삭제", description = """
+            댓글을 hard delete 합니다.
+            (주의) 시스템 관리자용이므로 클라이언트에 노출되지 않도록 합니다.""")
+
     @DeleteMapping("/{commentId}")
     public SuccessResponse<?> deleteCommentHard(@PathVariable Long commentId) {
-        return hardDeleteCommentUseCase.execute(commentId);
+        hardDeleteCommentUseCase.execute(commentId);
+        return SuccessResponse.empty();
     }
 }

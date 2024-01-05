@@ -1,6 +1,5 @@
 package likelion.univ.domain.project.entity;
 
-
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -15,23 +14,16 @@ public class Image {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name="image_id")
     private long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "project_id")
     private Project project;
-
-    //원본 파일명
-    private String name;
-
-    // 등록 파일명
-    private String saved;
+    private String imageUrl;
 
     @Builder
-    public Image(Project project, String name, String saved) {
+    public Image(Project project, String imageUrl) {
         this.project = project;
-        this.name = name;
-        this.saved = saved;
+        this.imageUrl = imageUrl;
     }
 }

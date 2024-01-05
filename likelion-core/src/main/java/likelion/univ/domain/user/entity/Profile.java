@@ -15,8 +15,6 @@ import javax.persistence.Enumerated;
 public class Profile {
 
     private String name;
-    // 010-0000-0000 형태로
-    private String phoneNumber;
     private String profileImage;
 
     @Column(columnDefinition = "TEXT")
@@ -24,6 +22,11 @@ public class Profile {
 
     @Enumerated(EnumType.STRING)
     private Part part;
+
+    public void updateProfile(String name, Part part) {
+        this.name = name;
+        this.part = part;
+    }
 
     public static Profile fromName(String name){
         return Profile.builder()

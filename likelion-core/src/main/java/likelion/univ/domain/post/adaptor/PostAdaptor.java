@@ -1,34 +1,75 @@
 package likelion.univ.domain.post.adaptor;
 
 import likelion.univ.annotation.Adaptor;
+import likelion.univ.domain.post.dto.response.PostSimpleData;
 import likelion.univ.domain.post.entity.Post;
-import likelion.univ.domain.post.exception.PostNotFoudException;
-import likelion.univ.domain.post.repository.PostCommandRepository;
-import likelion.univ.domain.user.entity.User;
+import likelion.univ.domain.post.dto.enums.MainCategory;
+import likelion.univ.domain.post.dto.enums.SubCategory;
+import likelion.univ.domain.post.repository.PostRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import likelion.univ.domain.post.exception.PostNotFoudException;
 
 import java.util.List;
 
 @Adaptor
 @RequiredArgsConstructor
 public class PostAdaptor {
+    private final PostRepository postRepository;
 
-    private final PostCommandRepository postRepository;
+    public Post findById(Long postId) {
+        return postRepository.findById(postId).orElseThrow(PostNotFoudException::new);
 
+    }
 
     public Long save(Post post) {
         Post savedPost = postRepository.save(post);
         return savedPost.getId();
     }
 
-    public Post findById(Long id) {
-        return postRepository.findById(id).orElseThrow(() -> new PostNotFoudException());
-    }
-
     public void delete(Post post) {
-        postRepository.delete(post); //예외처리
+        postRepository.delete(post);
+    }
+    public void deleteAllByIdInBatch(List<Long> ids){
+        postRepository.deleteAllByIdInBatch(ids);
     }
 
+    public Page<Post> findAllByAuthor_Id(Long userId, Pageable pageable){
+        return postRepository.findAllByAuthor_Id(userId,pageable);
+    }
+
+    public Page<Post> findByCommentAuthorId(Long userId, Pageable pageable){
+        return postRepository.findByCommentAuthorId(userId,pageable);
+    }
+
+    public Page<Post> findByPostLikeAuthorId(Long userId, Pageable pageable, String sort, String search){
+        return postRepository.findByPostLikeAuthorId(userId,pageable,sort,search);
+    }
+
+    public Page<Post> findByCategoriesOrderByCreatedDate(MainCategory mainCategory, SubCategory subCategory, Pageable pageable) {
+        return postRepository.findByCategoriesOrderByCreatedDate(mainCategory, subCategory, pageable);
+    }
+
+    public Page<Post> findByCategoriesOrderByLikeCount(MainCategory mainCategory, SubCategory subCategory, Pageable pageable) {
+        return postRepository.findByCategoriesOrderByLikeCount(mainCategory, subCategory, pageable);
+    }
+
+    public Page<Post> findByCategoriesOrderByCommentCount(MainCategory mainCategory, SubCategory subCategory, Pageable pageable) {
+        return postRepository.findByCategoriesOrderByCommentCount(mainCategory, subCategory, pageable);
+    }
+
+    public Page<PostSimpleData> findByCategoriesAndSearchTitle(String searchTitle, MainCategory mainCategory, SubCategory subCategory, Pageable pageable) {
+        return postRepository.findByCategoriesAndSearchTitle(searchTitle, mainCategory, subCategory, pageable);
+    }
+
+    public Page<PostSimpleData> findBySearchTitle(String searchTitle, Pageable pageable) {
+        return postRepository.findBySearchTitle(searchTitle, pageable);
+    }
+
+    public Page<Post> findPostsByCategoriesAndUniversityOrderByCreatedDate(
+            MainCategory mainCategory, SubCategory subCategory, Long universityId, Pageable pageable){
+        return postRepository.findByCategoriesAndUniversityOrderByCreatedDate(
+                mainCategory, subCategory, universityId, pageable);
+    }
 }
