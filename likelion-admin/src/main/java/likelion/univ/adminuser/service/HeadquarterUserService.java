@@ -27,8 +27,8 @@ public class HeadquarterUserService {
     private final GraduationRepository graduationRepository;
     private final GraduationService graduationService;
 
-    public PageResponse<UserInfoResponseDto> findAll(Role role, String univName, Pageable pageable) {
-        Page<User> users = userRepository.findByUnivNameAndRole(role, univName, pageable);
+    public PageResponse<UserInfoResponseDto> findAll(Role role, String univName, Boolean isExcelData, Pageable pageable) {
+        Page<User> users = userRepository.findByUnivNameAndRole(role, univName, isExcelData, pageable);
         return PageResponse.of(users.map(UserInfoResponseDto::of));
     }
 
