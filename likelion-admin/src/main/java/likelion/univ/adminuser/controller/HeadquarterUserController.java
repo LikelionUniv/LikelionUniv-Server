@@ -35,9 +35,10 @@ public class HeadquarterUserController {
             @PageableDefault(size = 10, page = 0, sort = "createdDate", direction = DESC)
             Pageable pageable,
             @RequestParam(value = "role", required = false) Role role,
-            @RequestParam(value = "univName", required = false) String univName
+            @RequestParam(value = "univName", required = false) String univName,
+            @RequestParam(value = "isExcelData", required = false) Boolean isExcelData
     ) {
-        PageResponse<UserInfoResponseDto> response = headquarterUserService.findAll(role, univName, pageable);
+        PageResponse<UserInfoResponseDto> response = headquarterUserService.findAll(role, univName, isExcelData, pageable);
         return SuccessResponse.of(response);
     }
 

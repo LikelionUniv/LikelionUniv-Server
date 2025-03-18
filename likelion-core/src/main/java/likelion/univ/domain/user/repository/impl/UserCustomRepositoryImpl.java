@@ -1,10 +1,5 @@
 package likelion.univ.domain.user.repository.impl;
 
-import static likelion.univ.domain.follow.entity.QFollow.follow;
-import static likelion.univ.domain.university.entity.QUniversity.university;
-import static likelion.univ.domain.user.entity.AccountStatus.ACTIVE;
-import static likelion.univ.domain.user.entity.QUser.user;
-
 import com.querydsl.core.types.EntityPath;
 import com.querydsl.core.types.Order;
 import com.querydsl.core.types.OrderSpecifier;
@@ -14,7 +9,6 @@ import com.querydsl.core.types.dsl.CaseBuilder;
 import com.querydsl.core.types.dsl.NumberExpression;
 import com.querydsl.core.types.dsl.PathBuilder;
 import com.querydsl.jpa.impl.JPAQueryFactory;
-import java.util.List;
 import likelion.univ.common.processor.ConvertSliceProcessor;
 import likelion.univ.domain.user.entity.Part;
 import likelion.univ.domain.user.entity.Role;
@@ -22,12 +16,16 @@ import likelion.univ.domain.user.entity.User;
 import likelion.univ.domain.user.repository.UserCustomRepository;
 import likelion.univ.domain.user.repository.searchcondition.UserSearchCondition;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Slice;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.*;
 import org.springframework.data.support.PageableExecutionUtils;
 import org.springframework.util.StringUtils;
+
+import java.util.List;
+
+import static likelion.univ.domain.follow.entity.QFollow.follow;
+import static likelion.univ.domain.university.entity.QUniversity.university;
+import static likelion.univ.domain.user.entity.AccountStatus.ACTIVE;
+import static likelion.univ.domain.user.entity.QUser.user;
 
 @RequiredArgsConstructor
 public class UserCustomRepositoryImpl implements UserCustomRepository {
@@ -108,7 +106,9 @@ public class UserCustomRepositoryImpl implements UserCustomRepository {
     }
 
     @Override
-    public Page<User> findByUnivNameAndRole(Role role, String univName, Pageable pageable) {
+    public Page<User> findByUnivNameAndRole(Role role, String univName, Boolean isExcelData, Pageable pageable) {
+        boolean isExcel = isExcelData != null ? isExcelData : false;
+
         List<Long> ids = queryFactory
                 .select(user.id)
                 .from(user)
@@ -130,15 +130,16 @@ public class UserCustomRepositoryImpl implements UserCustomRepository {
                         .where(startsWithUniversity(univName),
                                 eqRole(role),
                                 user.authInfo.accountStatus.eq(ACTIVE))
-                        .offset(pageable.getOffset())
                         .orderBy(user.universityInfo.ordinal.desc(),
                                 user.universityInfo.university.name.asc(),
                                 partOrder.asc(),
                                 user.profile.name.asc())
-                        .limit(pageable.getPageSize())
+                        .offset(isExcel ? 0 : pageable.getOffset())
+                        .limit(isExcel ? ids.size() + 1 : pageable.getPageSize())
                         .fetch();
-
-        return PageableExecutionUtils.getPage(users, pageable, ids::size);
+        return isExcel
+                ? PageableExecutionUtils.getPage(users, PageRequest.of(0, ids.size() + 1), ids::size)
+                : PageableExecutionUtils.getPage(users, pageable, ids::size);
     }
 
     @Override
